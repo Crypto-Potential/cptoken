@@ -3,9 +3,9 @@ pragma solidity ^0.4.4;
 import "./Ownable.sol";
 import "./StandardToken.sol";
 import "./Transferable.sol";
-import "./Withdrawable.sol";
+import "./Vestable.sol";
 
-contract QCPToken is StandardToken, owned, transferable {
+contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
 
   /* Public variables of the token */
 
@@ -22,6 +22,7 @@ contract QCPToken is StandardToken, owned, transferable {
 
   uint256 public sellPrice;
   uint256 public buyPrice;
+
   // This is a constructor function 
   // which means the following function name has to match the contract name declared above
   constructor() public {
@@ -61,6 +62,12 @@ contract QCPToken is StandardToken, owned, transferable {
     return amount;
   }
 
+  function grantVestedTokens(address _to, uint256 _value, uint64 _start, uint64 _cliff, uint64 _vesting) public {
+    super.grantVestedTokens(_to, _value, _start, _cliff, _vesting);
+    require(transfer(_to, _value),"Transfer unsucessful");
+    emit NewTokenGrant(msg.sender, _to, _value, _cliff, _vesting, _start);
+  }
+
   /**
   *  @notice Sell `amount` tokens to contract
   *  @param amount amount of tokens to be sold
@@ -73,12 +80,14 @@ contract QCPToken is StandardToken, owned, transferable {
     msg.sender.transfer(amount * sellPrice);    // sends ether to the seller. It's important to do this last to avoid recursion attacks
   }
 
-  function transfer(address _to, uint _value) public canTransfer(msg.sender) returns (bool success) {
+  function transfer(address _to, uint _value) public canTransfer(msg.sender) canTransferAmount(msg.sender, _value)
+  returns (bool success) {
     // Call StandardToken.transfer()
     return super.transfer(_to, _value);
   }
 
-  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) returns (bool success) {
+  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) canTransferAmount(from, _value) 
+  returns (bool success) {
     // Call StandardToken.transferForm()
     return super.transferFrom(_from, _to, _value);
   }
@@ -91,6 +100,31 @@ contract QCPToken is StandardToken, owned, transferable {
 
   function getBalance() public view returns(uint) {
     return address(this).balance;
+  }
+
+  modifier canTransferAmount(address _sender, uint _value) {
+    require(_value < spendableBalanceOf(_sender),"CANNOT_SPEND");
+    _;
+  }
+
+  function spendableBalanceOf(address _holder) public view returns (uint) {
+    return transferableTokens(_holder, uint64(now));
+  }
+
+  // @dev How many tokens can a holder transfer at a point in time
+  function transferableTokens(address holder, uint64 time) public view returns (uint256) {
+    uint256 grantIndex = tokenGrantsCount(holder);
+
+    if (grantIndex == 0) return balanceOf(holder); // shortcut for holder without grants
+
+    // Iterate through all the grants the holder has, and add all non-vested tokens
+    uint256 nonVested = 0;
+    for (uint256 i = 0; i < grantIndex; i++) {
+      nonVested = safeAdd(nonVested, nonVestedTokens(grants[holder][i], time));
+    }
+
+    // Balance - totalNonVested is the amount of tokens a holder can transfer at any given time
+    return safeSub(balanceOf(holder), nonVested);
   }
 
 }

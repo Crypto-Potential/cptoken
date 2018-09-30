@@ -1,6 +1,6 @@
 pragma solidity ^0.4.4;
 
-contract owned {
+contract Ownable {
   address public owner;
   address private ownerCandidate;
 

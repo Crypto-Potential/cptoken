@@ -4,7 +4,7 @@ import "./Ownable.sol";
 /**
  * Define interface for releasing the token transfer after a successful crowdsale.
  */
-contract transferable is owned {
+contract Transferable is Ownable {
 
   /* The finalizer contract that allows unlift the transfer limits on this token */
   address public releaseAgent;
