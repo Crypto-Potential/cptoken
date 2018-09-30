@@ -58,7 +58,7 @@ library SafeMath {
     return a % b;
   }
 
-  function max64(uint64 a, uint64 b) internal view returns (uint64) {
+  function max64(uint64 a, uint64 b) internal pure returns (uint64) {
     return a >= b ? a : b;
   }
 }

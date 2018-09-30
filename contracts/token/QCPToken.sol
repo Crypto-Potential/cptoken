@@ -4,9 +4,10 @@ import "./Ownable.sol";
 import "./StandardToken.sol";
 import "./Transferable.sol";
 import "./Vestable.sol";
+import "../library/SafeMath.sol";
 
 contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
-
+  using SafeMath for uint;
   /* Public variables of the token */
 
   /*
@@ -86,7 +87,7 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
     return super.transfer(_to, _value);
   }
 
-  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) canTransferAmount(from, _value) 
+  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) canTransferAmount(_from, _value) 
   returns (bool success) {
     // Call StandardToken.transferForm()
     return super.transferFrom(_from, _to, _value);
@@ -120,11 +121,11 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
     // Iterate through all the grants the holder has, and add all non-vested tokens
     uint256 nonVested = 0;
     for (uint256 i = 0; i < grantIndex; i++) {
-      nonVested = safeAdd(nonVested, nonVestedTokens(grants[holder][i], time));
+      nonVested = nonVested.add(nonVestedTokens(grants[holder][i], time));
     }
 
     // Balance - totalNonVested is the amount of tokens a holder can transfer at any given time
-    return safeSub(balanceOf(holder), nonVested);
+    return balanceOf(holder).sub(nonVested);
   }
 
 }

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.4;
 
-import "../installed/SafeMath.sol";
+import "../library/SafeMath.sol";
 
 contract Vestable {
   using SafeMath for uint;
@@ -80,7 +80,7 @@ contract Vestable {
   }
 
   function calculateVestedTokens(uint256 tokens, uint256 time, uint256 start, uint256 cliff, uint256 vesting)
-  internal view returns (uint256) {
+  internal pure returns (uint256) {
     
     // Shortcuts for before cliff and after vesting cases.
     if (time < cliff) return 0;
