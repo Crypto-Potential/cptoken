@@ -32,7 +32,6 @@ contract('QCPToken', async(accounts) => {
   let instance
   let owner = accounts[0]
   let account = accounts[1]
-
   beforeEach(async () => {
     instance = await QCPToken.deployed()
   })
@@ -87,22 +86,27 @@ contract('QCPToken', async(accounts) => {
   });
 
   it("should withdraw ether correctly", async () => {
+    // Check Initial balance
     const ownerOldETHBalance = await proxiedWeb3.eth.getBalance(owner);
     const initialBalance = Number(ownerOldETHBalance)
-    console.log('Initial Balance:', initialBalance)
+    const gasPrice = web3.toWei(100,'gwei');
 
     // Withdraw ether
     const withdrawAmount = web3.toWei(0.4)
-    let result = await instance.withdraw(withdrawAmount, {from: owner})
-    const ethBalance = await instance.getBalance()
-    const ownerETHBalance = await proxiedWeb3.eth.getBalance(owner);
+    let txnReceipt = await instance.withdraw(withdrawAmount, {from: owner, gasPrice: gasPrice})
+
+    // Calculate gas cost
+    const gasUsed = txnReceipt.receipt.gasUsed
+    const totgasCost = gasUsed * gasPrice;
+
+    // Check Final Balance in the owner and contract account
+    const ethBalance = await instance.getBalance()   // contract account balance
+    const ownerETHBalance = await proxiedWeb3.eth.getBalance(owner); 
     const finalBalance = Number(ownerETHBalance)
-    console.log('Final Balance:', finalBalance)
 
     console.log('EtherBalanceFinal: ',finalBalance,', Old:', initialBalance, ', A:', Number(withdrawAmount))
-    assert(result, "Not properly returned")
     assert.equal(ethBalance, web3.toWei(0.6), "Ether balance not proper in the contract account")
-    assert.equal(finalBalance, initialBalance + Number(withdrawAmount), "Ether balance not proper in the owner account")
+    assert.equal(finalBalance, initialBalance + Number(withdrawAmount) - totgasCost, "Ether balance not proper in the owner account")
   });
 
 });
