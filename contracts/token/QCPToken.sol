@@ -23,14 +23,15 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
 
   uint256 public sellPrice;
   uint256 public buyPrice;
+  event Log(string _myString);
 
   // This is a constructor function 
   // which means the following function name has to match the contract name declared above
   constructor() public {
-    decimals = 18;                                                 // Amount of decimals for display purposes (CHANGE THIS)
+    decimals = 2;                                                 // Amount of decimals for display purposes (CHANGE THIS)
     // If you want your initial tokens to be X and your decimal is 5, set this value to X * 100000. (CHANGE BELOW) 
     totalSupply = 1800000000 * 10 ** uint256(decimals);            // Update total supply (CHANGE THIS)
-    balances[owner] = totalSupply;                            // Give the creator all initial tokens.                 
+    balances[this] = totalSupply;                            // Give the creator all initial tokens.                 
     name = "CryptoPotential";                                     // Set the name for display purposes (CHANGE THIS)
     symbol = "QCP";                                               // Set the symbol for display purposes (CHANGE THIS)
   }
@@ -54,6 +55,13 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
     buyPrice = newBuyPrice;
   }
 
+  function getBuyPrice() public view returns(uint) {
+    return buyPrice;
+  }
+
+  function getSellPrice() public view returns(uint){
+    return sellPrice;
+  }
   /** 
   *  @notice Buy tokens from contract by sending ether
   */
@@ -101,6 +109,10 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
 
   function getBalance() public view returns(uint) {
     return address(this).balance;
+  }
+
+  function getTokenBalance() public view returns(uint) {
+    return balanceOf(this);
   }
 
   modifier canTransferAmount(address _sender, uint _value) {
