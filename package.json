@@ -1,0 +1,15 @@
+{
+  "name": "cptoken",
+  "version": "0.0.1",
+  "description": "Crypto Potential token",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "",
+  "homepage": "https://localhost:3000",
+  "devDependencies": {},
+  "dependencies": {
+    "web3": "^1.0.0-beta.36"
+  }
+}
