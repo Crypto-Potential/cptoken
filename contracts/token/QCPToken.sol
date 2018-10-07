@@ -21,17 +21,18 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
   string public symbol;                 // An identifier: eg SBX, XPR etc..
   string public version = "H1.0"; 
 
-  uint256 public sellPrice;
-  uint256 public buyPrice;
+  uint256 public sellPrice;           // price in Wei
+  uint256 public buyPrice;            // price in Wei
   event Log(string _myString);
-
+  address tokenSupplier;
   // This is a constructor function 
   // which means the following function name has to match the contract name declared above
   constructor() public {
     decimals = 2;                                                 // Amount of decimals for display purposes (CHANGE THIS)
     // If you want your initial tokens to be X and your decimal is 5, set this value to X * 100000. (CHANGE BELOW) 
     totalSupply = 1800000000 * 10 ** uint256(decimals);            // Update total supply (CHANGE THIS)
-    balances[this] = totalSupply;                            // Give the creator all initial tokens.                 
+    tokenSupplier = this;
+    balances[tokenSupplier] = totalSupply;                            // Give the creator all initial tokens.                 
     name = "CryptoPotential";                                     // Set the name for display purposes (CHANGE THIS)
     symbol = "QCP";                                               // Set the symbol for display purposes (CHANGE THIS)
   }
@@ -67,7 +68,7 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
   */
   function buy() public payable  returns(uint amount) {
     amount = msg.value / buyPrice;               // calculates the amount
-    _transfer(this, msg.sender, amount);         // makes the transfers
+    _transfer(tokenSupplier, msg.sender, amount);         // makes the transfers
     return amount;
   }
 
@@ -82,20 +83,24 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
   *  @param amount amount of tokens to be sold
   */
   function sell(uint256 amount) public returns(uint revenue){
-    address myAddress = this;
     revenue = amount * sellPrice;
-    require(myAddress.balance >= revenue, "INSUFFICIENT_FUNDS"); // checks if the contract has enough ether to buy
-    _transfer(msg.sender, this, amount);        // makes the transfers
+    require(tokenSupplier.balance >= revenue, "INSUFFICIENT_FUNDS"); // checks if the contract has enough ether to buy
+    _transfer(msg.sender, tokenSupplier, amount);        // makes the transfers
     msg.sender.transfer(amount * sellPrice);    // sends ether to the seller. It's important to do this last to avoid recursion attacks
   }
 
-  function transfer(address _to, uint _value) public canTransfer(msg.sender) canTransferAmount(msg.sender, _value)
+  function _transfer(address _from, address _to, uint _value) internal canTransferAmount(_from, _value){
+    // Call StandardToken._transfer()
+    super._transfer(_from, _to, _value);
+  }
+
+  function transfer(address _to, uint _value) public canTransferAmount(msg.sender, _value)
   returns (bool success) {
     // Call StandardToken.transfer()
     return super.transfer(_to, _value);
   }
 
-  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) canTransferAmount(_from, _value) 
+  function transferFrom(address _from, address _to, uint _value) public canTransferAmount(_from, _value) 
   returns (bool success) {
     // Call StandardToken.transferForm()
     return super.transferFrom(_from, _to, _value);
@@ -116,7 +121,8 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
   }
 
   modifier canTransferAmount(address _sender, uint _value) {
-    require(_value < spendableBalanceOf(_sender),"CANNOT_SPEND");
+    require(released || _sender == tokenSupplier || transferAgents[_sender], "CANNOT_TRANSFER_TOKEN");
+    require(_sender == tokenSupplier || _value < spendableBalanceOf(_sender), "CANNOT_SPEND");
     _;
   }
 
