@@ -1,13 +1,14 @@
 pragma solidity ^0.4.4;
 
-import "./Ownable.sol";
-import "./StandardToken.sol";
-import "./Transferable.sol";
-import "./Vestable.sol";
 import "../library/SafeMath.sol";
+import "./basic/Ownable.sol";
+import "./basic/StandardToken.sol";
+import "./basic/Transferable.sol";
+import "./basic/Vestable.sol";
 
 contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
   using SafeMath for uint;
+
   /* Public variables of the token */
 
   /*
@@ -23,15 +24,15 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
 
   uint256 public sellPrice;           // price in Wei
   uint256 public buyPrice;            // price in Wei
-  event Log(string _myString);
   address tokenSupplier;
+
   // This is a constructor function 
   // which means the following function name has to match the contract name declared above
   constructor() public {
     decimals = 2;                                                 // Amount of decimals for display purposes (CHANGE THIS)
     // If you want your initial tokens to be X and your decimal is 5, set this value to X * 100000. (CHANGE BELOW) 
     totalSupply = 1800000000 * 10 ** uint256(decimals);            // Update total supply (CHANGE THIS)
-    tokenSupplier = this;
+    tokenSupplier = owner;
     balances[tokenSupplier] = totalSupply;                            // Give the creator all initial tokens.                 
     name = "CryptoPotential";                                     // Set the name for display purposes (CHANGE THIS)
     symbol = "QCP";                                               // Set the symbol for display purposes (CHANGE THIS)
@@ -63,14 +64,15 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
   function getSellPrice() public view returns(uint){
     return sellPrice;
   }
-  /** 
-  *  @notice Buy tokens from contract by sending ether
-  */
-  function buy() public payable  returns(uint amount) {
-    amount = msg.value / buyPrice;               // calculates the amount
-    _transfer(tokenSupplier, msg.sender, amount);         // makes the transfers
-    return amount;
-  }
+
+  // /** 
+  // *  @notice Buy tokens from contract by sending ether
+  // */
+  // function buy() public payable  returns(uint amount) {
+  //   amount = msg.value / buyPrice;                    // calculates the amount
+  //   _transfer(tokenSupplier, msg.sender, amount);     // makes the transfers
+  //   return amount;
+  // }
 
   function grantVestedTokens(address _to, uint256 _value, uint64 _start, uint64 _cliff, uint64 _vesting) public {
     super.grantVestedTokens(_to, _value, _start, _cliff, _vesting);
@@ -78,36 +80,35 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
     emit NewTokenGrant(msg.sender, _to, _value, _cliff, _vesting, _start);
   }
 
-  /**
-  *  @notice Sell `amount` tokens to contract
-  *  @param amount amount of tokens to be sold
-  */
-  function sell(uint256 amount) public returns(uint revenue){
-    revenue = amount * sellPrice;
-    require(tokenSupplier.balance >= revenue, "INSUFFICIENT_FUNDS"); // checks if the contract has enough ether to buy
-    _transfer(msg.sender, tokenSupplier, amount);        // makes the transfers
-    msg.sender.transfer(amount * sellPrice);    // sends ether to the seller. It's important to do this last to avoid recursion attacks
-  }
+  // /**
+  // *  @notice Sell `amount` tokens to contract
+  // *  @param amount amount of tokens to be sold
+  // */
+  // function sell(uint256 amount) public returns(uint revenue){
+  //   revenue = amount * sellPrice;
+  //   require(tokenSupplier.balance >= revenue, "INSUFFICIENT_FUNDS"); // checks if the contract has enough ether to buy
+  //   _transfer(msg.sender, tokenSupplier, amount);        // makes the transfers
+  //   msg.sender.transfer(amount * sellPrice);    // sends ether to the seller. It's important to do this last to avoid recursion attacks
+  // }
 
-  function _transfer(address _from, address _to, uint _value) internal canTransferAmount(_from, _value){
-    // Call StandardToken._transfer()
-    super._transfer(_from, _to, _value);
-  }
-
-  function transfer(address _to, uint _value) public canTransferAmount(msg.sender, _value)
+  function transfer(address _to, uint _value) public canTransfer(msg.sender)
   returns (bool success) {
     // Call StandardToken.transfer()
     return super.transfer(_to, _value);
   }
 
-  function transferFrom(address _from, address _to, uint _value) public canTransferAmount(_from, _value) 
+  function transfer(uint amount) public payable {
+
+  }
+
+  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) 
   returns (bool success) {
     // Call StandardToken.transferForm()
     return super.transferFrom(_from, _to, _value);
   }
 
   function withdraw(uint amount) public onlyOwner returns(bool) {
-    require(amount < address(this).balance,"INSUFFICIENT_FUNDS");
+    require(amount < address(this).balance, "INSUFFICIENT_FUNDS");
     owner.transfer(amount);
     return true;
   }
@@ -117,14 +118,14 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
   }
 
   function getTokenBalance() public view returns(uint) {
-    return balanceOf(this);
+    return balanceOf(tokenSupplier);
   }
 
-  modifier canTransferAmount(address _sender, uint _value) {
-    require(released || _sender == tokenSupplier || transferAgents[_sender], "CANNOT_TRANSFER_TOKEN");
-    require(_sender == tokenSupplier || _value < spendableBalanceOf(_sender), "CANNOT_SPEND");
-    _;
-  }
+  // modifier canTransferAmount(address _sender, uint _value) {
+  //   require(released || _sender == tokenSupplier || transferAgents[_sender], "CANNOT_TRANSFER_TOKEN");
+  //   // require(_sender == tokenSupplier || _value < spendableBalanceOf(_sender), "CANNOT_SPEND");
+  //   _;
+  // }
 
   function spendableBalanceOf(address _holder) public view returns (uint) {
     return transferableTokens(_holder, uint64(now));

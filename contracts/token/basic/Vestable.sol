@@ -1,6 +1,6 @@
 pragma solidity ^0.4.4;
 
-import "../library/SafeMath.sol";
+import "../../library/SafeMath.sol";
 
 contract Vestable {
   using SafeMath for uint;
