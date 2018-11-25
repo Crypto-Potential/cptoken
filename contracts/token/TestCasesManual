@@ -30,5 +30,14 @@ truffle develop --log
 truffle develop
 migrate --reset
 
-buyToken.sell(web3.toWei(0.00000000000000001), {from: web3.eth.accounts[1]})
-var buyToken; TradingQCP.deployed().then( function ( inst) { buyToken = inst});
+buyToken.sell(5, {from: web3.eth.accounts[1]}) ---- doesnt works as of now
+instance.approve(buyToken.address, 5, {from: web3.eth.accounts[1]})
+
+instance.releaseTokenTransfer();
+instance.transfer(web3.eth.accounts[2], web3.toWei(0.00000000000000001), {from:web3.eth.accounts[1]})
+--- works
+instance.transfer(web3.eth.accounts[2], web3.toWei(0.00000000000000001), {from:web3.eth.accounts[2]})
+--- fails
+instance.setVestableAddress(web3.eth.accounts[2], false);
+instance.transfer(web3.eth.accounts[2], web3.toWei(0.00000000000000001), {from:web3.eth.accounts[2]})
+--works
