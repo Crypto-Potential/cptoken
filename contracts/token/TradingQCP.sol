@@ -1,15 +1,15 @@
 pragma solidity ^0.4.4;
 
 import "./basic/Ownable.sol";
-import "./QCPToken.sol";
+import "./basic/StandardToken.sol";
 
 contract TradingQCP is Ownable{
 
   uint256 public sellPrice;           // price in Wei
   uint256 public buyPrice;            // price in Wei
-  QCPToken public token;
+  StandardToken public token;
 
-  constructor(QCPToken _token) public{
+  constructor(StandardToken _token) public{
     require(_token != address(0), "Token address has to be proper");
     token = _token;
   }
@@ -38,7 +38,7 @@ contract TradingQCP is Ownable{
   function buy() public payable  returns(uint amount) {
     amount = msg.value / buyPrice; // calculates the amount
     token.transfer(msg.sender, amount);  // makes the transfers
-    token.transfer(msg.value);  // sends the ether
+    // token.send(msg.value);  // sends the ether
     return amount;
   }
 
@@ -48,9 +48,9 @@ contract TradingQCP is Ownable{
   */
   function sell(uint256 amount) public returns(uint revenue) {
     revenue = amount * sellPrice;
-    require(address(token).balance >= revenue, "INSUFFICIENT_FUNDS"); // checks if the contract has enough ether to buy
+    // require(address(token).balance >= revenue, "INSUFFICIENT_FUNDS"); // checks if the contract has enough ether to buy
     token.transferFrom(msg.sender, this, amount);           // makes the transfers
-    msg.sender.transfer(amount * sellPrice);     // sends ether to the seller. It's important to do this last to avoid recursion attacks
+    // msg.sender.transfer(amount * sellPrice);     // sends ether to the seller. It's important to do this last to avoid recursion attacks
   }
 
   modifier canTransfer(address _sender, uint _value) {

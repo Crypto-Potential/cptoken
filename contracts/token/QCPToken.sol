@@ -47,61 +47,19 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
     }
   }
 
-  /**
-  *  @notice Allow users to buy tokens for `newBuyPrice` eth and sell tokens for `newSellPrice` eth
-  *  @param newSellPrice Price the users can sell to the contract
-  *  @param newBuyPrice Price users can buy from the contract
-  */
-  function setPrices(uint256 newSellPrice, uint256 newBuyPrice) public onlyOwner {
-    sellPrice = newSellPrice;
-    buyPrice = newBuyPrice;
-  }
-
-  function getBuyPrice() public view returns(uint) {
-    return buyPrice;
-  }
-
-  function getSellPrice() public view returns(uint){
-    return sellPrice;
-  }
-
-  // /** 
-  // *  @notice Buy tokens from contract by sending ether
-  // */
-  // function buy() public payable  returns(uint amount) {
-  //   amount = msg.value / buyPrice;                    // calculates the amount
-  //   _transfer(tokenSupplier, msg.sender, amount);     // makes the transfers
-  //   return amount;
+  // function grantVestedTokens(address _to, uint256 _value, uint64 _start, uint64 _cliff, uint64 _vesting) public {
+  //   super.grantVestedTokens(_to, _value, _start, _cliff, _vesting);
+  //   require(transfer(_to, _value),"Transfer unsucessful");
+  //   emit NewTokenGrant(msg.sender, _to, _value, _cliff, _vesting, _start);
   // }
 
-  function grantVestedTokens(address _to, uint256 _value, uint64 _start, uint64 _cliff, uint64 _vesting) public {
-    super.grantVestedTokens(_to, _value, _start, _cliff, _vesting);
-    require(transfer(_to, _value),"Transfer unsucessful");
-    emit NewTokenGrant(msg.sender, _to, _value, _cliff, _vesting, _start);
-  }
-
-  // /**
-  // *  @notice Sell `amount` tokens to contract
-  // *  @param amount amount of tokens to be sold
-  // */
-  // function sell(uint256 amount) public returns(uint revenue){
-  //   revenue = amount * sellPrice;
-  //   require(tokenSupplier.balance >= revenue, "INSUFFICIENT_FUNDS"); // checks if the contract has enough ether to buy
-  //   _transfer(msg.sender, tokenSupplier, amount);        // makes the transfers
-  //   msg.sender.transfer(amount * sellPrice);    // sends ether to the seller. It's important to do this last to avoid recursion attacks
-  // }
-
-  function transfer(address _to, uint _value) public canTransfer(msg.sender)
-  returns (bool success) {
+  function transfer(address _to, uint _value) public canTransfer(msg.sender) canTransferAmount(msg.sender, msg.sender, _value)
+    returns (bool success) {
     // Call StandardToken.transfer()
     return super.transfer(_to, _value);
   }
 
-  function transfer(uint amount) public payable {
-
-  }
-
-  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) 
+  function transferFrom(address _from, address _to, uint _value) public canTransfer(_from) canTransferAmount(_from, msg.sender, _value)
   returns (bool success) {
     // Call StandardToken.transferForm()
     return super.transferFrom(_from, _to, _value);
@@ -121,30 +79,24 @@ contract QCPToken is StandardToken, Ownable, Transferable, Vestable {
     return balanceOf(tokenSupplier);
   }
 
-  // modifier canTransferAmount(address _sender, uint _value) {
-  //   require(released || _sender == tokenSupplier || transferAgents[_sender], "CANNOT_TRANSFER_TOKEN");
-  //   // require(_sender == tokenSupplier || _value < spendableBalanceOf(_sender), "CANNOT_SPEND");
-  //   _;
+  // function spendableBalanceOf(address _holder) public view returns (uint) {
+  //   return transferableTokens(_holder, uint64(now));
   // }
 
-  function spendableBalanceOf(address _holder) public view returns (uint) {
-    return transferableTokens(_holder, uint64(now));
-  }
+  // // @dev How many tokens can a holder transfer at a point in time
+  // function transferableTokens(address holder, uint64 time) public view returns (uint256) {
+  //   uint256 grantIndex = tokenGrantsCount(holder);
 
-  // @dev How many tokens can a holder transfer at a point in time
-  function transferableTokens(address holder, uint64 time) public view returns (uint256) {
-    uint256 grantIndex = tokenGrantsCount(holder);
+  //   if (grantIndex == 0) return balanceOf(holder); // shortcut for holder without grants
 
-    if (grantIndex == 0) return balanceOf(holder); // shortcut for holder without grants
+  //   // Iterate through all the grants the holder has, and add all non-vested tokens
+  //   uint256 nonVested = 0;
+  //   for (uint256 i = 0; i < grantIndex; i++) {
+  //     nonVested = nonVested.add(nonVestedTokens(grants[holder][i], time));
+  //   }
 
-    // Iterate through all the grants the holder has, and add all non-vested tokens
-    uint256 nonVested = 0;
-    for (uint256 i = 0; i < grantIndex; i++) {
-      nonVested = nonVested.add(nonVestedTokens(grants[holder][i], time));
-    }
-
-    // Balance - totalNonVested is the amount of tokens a holder can transfer at any given time
-    return balanceOf(holder).sub(nonVested);
-  }
+  //   // Balance - totalNonVested is the amount of tokens a holder can transfer at any given time
+  //   return balanceOf(holder).sub(nonVested);
+  // }
 
 }
