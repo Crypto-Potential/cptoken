@@ -1,2 +1,2 @@
-# cptoken
-CP Token serves as a medium of exchange to access specialized ICO reports on the Crypto-Potential platform.
+# qcptoken
+QCP Token serves to connect blockchain community through news and services in the space.
